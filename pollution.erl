@@ -4,7 +4,7 @@
 -define(Err, Error = {error, _} -> Error).
 -record(monitor, {names = #{}, state = #{}}).
 
--export([ createMonitor/0, addStation/3, addValue/5, removeValue/4, getOneValue/4, getStationMean/3 ]).
+-export([ createMonitor/0, addStation/3, addValue/5, removeValue/4, getOneValue/4, getStationMean/3, getDailyMean/3 ]).
 
 createMonitor() -> #monitor{}.
 
@@ -56,11 +56,13 @@ getOneValue(Id, Date, Type, Monitor = #monitor{}) ->
       end
   end.
 
+mean([]) -> 0;
 mean(List) -> lists:sum(List) / length(List).
 
-getStationMean(Coordinates, Type, #monitor{state = State}) when is_tuple(Coordinates) ->
-  case maps:find(Coordinates, State) of
-    error -> {error, coordinates};
-    {ok, Measurements} -> mean([Value || {_, XType, Value} <- Measurements, XType == Type])
+getStationMean(Id, Type, Monitor) ->
+  case getMeasurements(Id, Monitor) of ?Err;
+    {_, Measurements} -> mean([Value || {_, XType, Value} <- Measurements, XType == Type])
   end.
 
+getDailyMean({Day, _}, Type, #monitor{state = State}) ->
+  mean([Value || Values <- maps:values(State), {{{XDay, _}, XType}, Value} <- Values, {XDay, XType} == {Day, Type} ]).
