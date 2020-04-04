@@ -6,7 +6,7 @@
 
 -export([ createMonitor/0, addStation/3, addValue/5, removeValue/4, 
           getOneValue/4, getStationMean/3, getDailyMean/3,
-					getStationQuartiles/3, getStationIQR/3 ]).
+          getStationQuartiles/3, getStationIQR/3 ]).
 
 createMonitor() -> #monitor{}.
 
@@ -69,27 +69,27 @@ getStationMean(Id, Type, Monitor) ->
 getDailyMean({Day, _}, Type, #monitor{state = State}) ->
   mean([Value || Values <- maps:values(State), {{{XDay, _}, XType}, Value} <- Values, {XDay, XType} == {Day, Type} ]).
 
-medianS([]) -> {error, no_values};
-medianS([X]) -> X;
-medianS(Sorted) -> 
+medianS([], Q2) -> Q2;
+medianS([X], _) -> X;
+medianS(Sorted, _) -> 
   Len = length(Sorted),
   (lists:nth(Len div 2, Sorted) + lists:nth(Len div 2 + 1, Sorted)) / 2.
 
 quartiles([]) -> {error, no_values};
 quartiles(Measurements) ->
-	Sorted = lists:sort(Measurements),
-	{Min, Max} = {lists:min(Sorted), lists:max(Sorted)},
-	Q2 = medianS(Sorted),
-	Q1 = medianS([ X || X <- Sorted, X < Q2]),
-  Q3 = medianS([ X || X <- Sorted, X > Q2]),
+  Sorted = lists:sort(Measurements),
+  {Min, Max} = {lists:min(Sorted), lists:max(Sorted)},
+  Q2 = medianS(Sorted, 0),
+  Q1 = medianS([ X || X <- Sorted, X < Q2], Q2),
+  Q3 = medianS([ X || X <- Sorted, X > Q2], Q2),
   {Min, Q1, Q2, Q3, Max}.
 
 getStationQuartiles(Id, Type, Monitor) ->
   case getMeasurements(Id, Monitor) of ?Err;
     {_, Measurements} -> quartiles([Value || {{_, XType}, Value} <- Measurements, XType == Type])
-	end.
+  end.
 
 getStationIQR(Id, Type, Monitor) ->
-	case getStationQuartiles(Id, Type, Monitor) of ?Err;
-		{_, Q1, _, Q3, _} -> Q3 - Q1
-	end.
+  case getStationQuartiles(Id, Type, Monitor) of ?Err;
+    {_, Q1, _, Q3, _} -> Q3 - Q1
+  end.
