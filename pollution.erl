@@ -12,9 +12,9 @@ createMonitor() -> #monitor{}.
 
 addStation(Name, _, _) when not is_list(Name) -> {error, name};
 addStation(_, Coordinates, _) when not is_tuple(Coordinates) -> {error, coordinates};
-addStation(Name, Coordinates, Monitor = #monitor{names = Names, state = State}) ->
+addStation(Name, Coordinates, #monitor{names = Names, state = State}) ->
   case {maps:is_key(Name, Names), maps:is_key(Coordinates, State)} of
-    {false, false} -> Monitor#monitor{names = Names#{ Name => Coordinates }, state = State#{ Coordinates => [] }};
+    {false, false} -> #monitor{names = Names#{ Name => Coordinates }, state = State#{ Coordinates => [] }};
     {true, _} -> {error, name};
     {_, true} -> {error, coordinates}
   end.
